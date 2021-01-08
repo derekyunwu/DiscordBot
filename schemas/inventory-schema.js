@@ -7,11 +7,16 @@ const userInvenSchema = mongoose.Schema({
     },
 
     invenPoke: {
-        type: Array,
-        default: {}
+        type: [String],
+        default: []
     },
 
-    numRolls: {
+    count: {
+        type: Number,
+        default: 0
+    },
+
+    myCredits: {
         type: Number,
         default: 0
     }

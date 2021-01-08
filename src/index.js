@@ -3,44 +3,64 @@ require('dotenv').config();
 const {Client, Message, MessageEmbed} = require('discord.js');
 const fetch = require('node-fetch');
 const mongo = require('./mongo');
+const userInvenSchema = require('../schemas/inventory-schema')
 
 const bot = new Client();
 const PREFIX = "!";
 const url = "https://pokeapi.co/api/v2/pokemon/";
 const artwork = "";
 var curr_pokemon = '';
-
-const connectToMongoDB = async () => {
-    await mongo().then(mongoose => {
-        try {
-            console.log('Connected to mongodb!')
-        } finally {
-            mongoose.connection.close()
-        }
-    })
-}
+const roleName = 'Pokemon Trainer';
 
 bot.login(process.env.DISCORDJS_BOT_TOKEN);
 
 bot.on('ready', () => {
     console.log('Derkbot is online.');
-    connectToMongoDB();
 });
 
 bot.on('message', async msg => {
     if (msg.author.bot) return;
     if (msg.content.startsWith(PREFIX)){
+
         // user is attempting to use bot functionality
         const [CMD_NAME, ...args] = msg.content
             .trim()
             .substring(PREFIX.length)
             .split(/\s+/); // regex expression to ignore whitespace as arguments
+        
+        const { guild, author } = msg
+        const { id } = author
+        const member = guild.members.cache.find(member => member.id === id)
+
         if (CMD_NAME === 'intro'){
+
             // display intro bot documentation
             msg.channel.send("Command read as !intro");
-        } else if (CMD_NAME === "kick"){
-            msg.channel.send("Command read as !kick");
+
+        } else if (CMD_NAME === "start"){
+            //begins pokemon adventure
+
+            if (member.roles.cache.some(role => role.name === roleName)){
+                msg.channel.send(`Woops. It looks like ${author} has already begun their adventure!`);
+                return
+            }
+
+            await mongo().then(async mongoose => {
+                try {
+                    await new userInvenSchema({
+                        _id: id
+                    }).save()
+                } finally {
+                    mongoose.connection.close()
+                }
+            })
+
+            const role = guild.roles.cache.find(role => role.name === roleName);
+            member.roles.add(role);
+
+            msg.channel.send(`Congratulations ${author}! You have begun your Pokemon adventure.`)
         } else if (CMD_NAME === "generate"){
+
             // testing the http requests
             const pokemon_id = Math.floor( (Math.random() * 151) + 1);
             const final_url = url + pokemon_id;
@@ -59,27 +79,90 @@ bot.on('message', async msg => {
                 .setDescription('To catch this Pokemon, type !catch <pokemon-name>. The first person who guesses the correct Pokemon name catches the Pokemon successfully.')
                 .setImage(artwork)
                 .setTimestamp();
+            
             msg.channel.send(pokemon_embed);
-            curr_pokemon = species.name.charAt(0).toUpperCase() + species.name.slice(1);
-            // add current pokemon name to database
+            curr_pokemon = species.name.charAt(0).toUpperCase() + species.name.slice(1); // may not be the best way to do this
+
         } else if (CMD_NAME === "help"){
+
             msg.channel.send("I support the following commands:\n\n" +
             "**!help** - Displays my active commands\n" + 
-            "**!intro** - Displays intro message for my activities\n" + 
+            "**!start** - Claims **Pokemon Trainer** role / Can begin catching Pokemon\n" + 
             "**!generate** - Randomly returns an image of a Gen 1 Pokemon\n" + 
             "**!catch <pokemon-name>** - Adds pokemon to personal inventory if <pokemon-name> is correct / Can only be used if a wild Pokemon has appeared\n" + 
             "**!inventory** - Prints a list of Pokemon in user inventory\n" + 
-            "**!rolls** - Prints the number of rolls + credits owned by a user\n"
+            "**!rolls** - Prints the number of rolls + credits owned by a user\n" +
+            "**!end** - Forfeit **Pokemon Trainer** role / All data is purged\n" 
             );
+
         } else if (CMD_NAME === "catch"){
-            if (!curr_pokemon){
+
+            if (!member.roles.cache.some(role => role.name === roleName)){
+                msg.channel.send(`${author}, it looks like you haven't started your Pokemon adventure. Type **!start** to begin catching Pokemon.`);
+            } else if (!curr_pokemon){
                 msg.channel.send("Cannot <!catch> at this time. No wild Pokemon have appeared!");
             } else {
                 if (args[0].toLowerCase() === curr_pokemon.toLowerCase()){
-                    msg.channel.send(`Congratulations ${msg.author}! You have caught a wild ${curr_pokemon}! ${curr_pokemon} has been added to your inventory.`);
+                    msg.channel.send(`Congratulations ${author}! You have caught a wild ${curr_pokemon}! ${curr_pokemon} has been added to your inventory.`);
+                    var temp = curr_pokemon;
                     curr_pokemon = "";
+
+                    await mongo().then(async mongoose => {
+                        try {
+                            await userInvenSchema.findOneAndUpdate({
+                                _id: id
+                            }, {
+                                $addToSet: {
+                                    invenPoke: temp,
+                                },
+                            })
+                        } finally {
+                            mongoose.connection.close()
+                        }
+                    })
+
+                    // finished
                 }
             }
+        } else if (CMD_NAME === "inventory"){
+
+            if (!member.roles.cache.some(role => role.name === roleName)){
+                msg.channel.send(`${author}, it looks like you haven't started your Pokemon adventure. Type **!start** to begin catching Pokemon.`);
+            } else {
+                await mongo().then(async mongoose => {
+                    try {
+                        // var inven = await userInvenSchema.findOne({
+                        //     _id: id
+                        // }).invenPoke;
+
+                        var inven = await userInvenSchema.distinct("invenPoke", { _id: id })
+
+                        if (!inven){
+                            msg.channel.send(`${author}'s inventory has no Pokemon.`)
+                        } else {
+                            var poke_list = "";
+                            for (var i = 0; i < inven.length; i ++){
+                                poke_list += inven[i] + "\n";
+                            }
+
+                            const inventory_embed = new MessageEmbed()
+                                .setColor('#0099ff')
+                                .setTitle(`Inventory:`)
+                                .setDescription(poke_list)
+                                .setFooter(`Requested by ${msg.author.tag}.`, msg.author.displayAvatarURL);
+                            
+                            msg.channel.send(inventory_embed)
+                        }
+                    } finally {
+                        mongoose.connection.close()
+                    }
+                })
+                
+            }
+        } else if (CMD_NAME === "end"){
+
+            msg.channel.send('Command read as !end')
+
         }
     }
 });
