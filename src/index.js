@@ -4,11 +4,11 @@ const {Client, Message, MessageEmbed} = require('discord.js');
 const fetch = require('node-fetch');
 const mongo = require('./mongo');
 const userInvenSchema = require('../schemas/inventory-schema')
+const rem = require('./rem')
 
 const bot = new Client();
 const PREFIX = "!";
 const url = "https://pokeapi.co/api/v2/pokemon/";
-const artwork = "";
 var curr_pokemon = '';
 const roleName = 'Pokemon Trainer';
 
@@ -52,7 +52,8 @@ bot.on('message', async msg => {
             "**!generate** - Randomly returns an image of a Gen 1 Pokemon\n" + 
             "**!catch <pokemon-name>** - Adds pokemon to personal inventory if <pokemon-name> is correct / Can only be used if a wild Pokemon has appeared\n" + 
             "**!inventory** - Prints a list of Pokemon in user inventory\n" + 
-            "**!rolls** - Prints the number of rolls + credits owned by a user\n" +
+            "**!roll** - Uses dupe credits and rolls for a random Pokemon\n" +
+            "**!credits** - Displays the number of credits + rolls usable for the REM\n" +
             "**!end** - Forfeit **Pokemon Trainer** role / All data is purged\n" 
             );
 
@@ -166,9 +167,13 @@ bot.on('message', async msg => {
                 })
                 
             }
-        } else if (CMD_NAME === "rolls") {
+        } else if (CMD_NAME === "roll") {
 
-            msg.channel.send(`Command read as !rolls`)
+            msg.channel.send(rem()[0])
+
+        } else if (CMD_NAME === "credits") {
+
+            msg.channel.send('Command read as !credits.')
 
         } else if (CMD_NAME === "end"){
             // if does not have pokemon trainer role
