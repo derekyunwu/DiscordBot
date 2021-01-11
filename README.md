@@ -19,3 +19,6 @@ Bot employs the following technologies:
 3) PokeAPI
 
 Note: Plans are in place to deploy the bot to Heroku
+
+### Current Status
+Incomplete
