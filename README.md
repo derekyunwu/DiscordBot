@@ -20,5 +20,5 @@ Bot employs the following technologies:
 
 Note: Plans are in place to deploy the bot to Heroku
 
-### Current Status
+## Current Status
 Incomplete
