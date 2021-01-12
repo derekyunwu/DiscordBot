@@ -139,9 +139,6 @@ bot.on('message', async msg => {
             } else {
                 await mongo().then(async mongoose => {
                     try {
-                        // var inven = await userInvenSchema.findOne({
-                        //     _id: id
-                        // }).invenPoke;
 
                         var inven = await userInvenSchema.distinct("invenPoke", { _id: id })
 
@@ -171,9 +168,27 @@ bot.on('message', async msg => {
 
             msg.channel.send(rem()[0])
 
+
         } else if (CMD_NAME === "credits") {
 
-            msg.channel.send('Command read as !credits.')
+            if (!member.roles.cache.some(role => role.name === roleName)){
+                msg.channel.send(`${author}, it looks like you haven't started your Pokemon adventure. Type **!start** to begin catching Pokemon.`);
+            } else {
+
+                await mongo().then(async mongoose => {
+                    try {
+                        var result = await userInvenSchema.findOne({
+                            _id: id
+                        })
+                        
+                        msg.channel.send(`${author} has ${result.myCredits} credit(s) or ${Math.trunc(result.myCredits/2)} roll(s).`)
+
+                    } finally {
+                        mongoose.connection.close()
+                    }
+                })
+
+            }
 
         } else if (CMD_NAME === "end"){
             // if does not have pokemon trainer role
