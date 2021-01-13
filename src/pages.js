@@ -5,6 +5,13 @@ const fetch = require('node-fetch');
 const eggImage = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/175.png"
 const imageURL = "https://pokeapi.co/api/v2/pokemon/" 
 
+const eggType = {
+    'bronze': 'green',
+    'silver': 'green',
+    'gold': 'gold',
+    'diamond': 'purple'
+}
+
 module.exports = async (client, message, pokemon, tier) => {
 
     const edited = pokemon.toLowerCase()
