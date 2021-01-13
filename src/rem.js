@@ -17,7 +17,7 @@ const bronzeTier = [
     'Bellsprout', 'Geodude', 'Magnemite', 'Doduo',
     'Gastly', 'Krabby', 'Voltorb', 'Exeggcute', 
     'Cubone', 'Koffing', 'Horsea', 'Goldeen',
-    'Magikarp', 'Dratini'
+    'Magikarp'
 ]
 
 // const silverTier = {
@@ -120,19 +120,19 @@ module.exports = () => {
     var pokemon;
     var tier;
     if (randomVal < dropBS){
-        var randomIndex = Math.floor( (Math.random() * bronzeSize) + 1);
+        var randomIndex = Math.floor( (Math.random() * bronzeSize));
         pokemon = bronzeTier[randomIndex]
         tier = "bronze"
     } else if (randomVal < dropSG){
-        var randomIndex = Math.floor( (Math.random() * silverSize) + 1);
+        var randomIndex = Math.floor( (Math.random() * silverSize));
         pokemon = silverTier[randomIndex]
         tier = "silver"
     } else if (randomVal < dropGD){
-        var randomIndex = Math.floor( (Math.random() * goldSize) + 1);
+        var randomIndex = Math.floor( (Math.random() * goldSize));
         pokemon = goldTier[randomIndex]
         tier = "gold"
     } else {
-        var randomIndex = Math.floor( (Math.random() * diamondSize) + 1);
+        var randomIndex = Math.floor( (Math.random() * diamondSize));
         pokemon = diamondTier[randomIndex]
         tier = "diamond"
     }

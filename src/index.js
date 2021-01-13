@@ -166,23 +166,54 @@ bot.on('message', async msg => {
                 
             }
         } else if (CMD_NAME === "roll") {
-            
-            const result = rem()
-            const type = result[1]
-            const pokemonName = result[0]
-            // const rollResult = `Congratulations! ${author} has rolled a(n) ||${pokemonName}||.`
 
-            // const imagePath = 'assets/green.png'
-            // const roll_embed = new MessageEmbed()
-            //     .attachFiles({ attachment: imagePath, name: 'green.png' })
-            //     .setColor('#0099ff')
-            //     .setTitle(`Roll Result:`)
-            //     .setDescription(rollResult)
-            //     .setImage('attachment://'+'green.png')
-            //     .setFooter("Page 1 of 1")
-            
-            // msg.channel.send(roll_embed)
-            rollPage(bot, msg, pokemonName, type)
+            if (!member.roles.cache.some(role => role.name === roleName)){
+                msg.channel.send(`${author}, it looks like you haven't started your Pokemon adventure. Type **!start** to begin catching Pokemon.`);
+                return
+            }
+            // check if user has enough credits
+
+            await mongo().then(async mongoose => {
+                try {
+                    var result = await userInvenSchema.findOne({
+                        _id: id
+                    })
+
+                    if (result.myCredits < 2) {
+                        msg.reply(`It looks like you don't have enough credits to roll at this moment!`)
+                        return
+                    }
+
+                    const roll_result = rem()
+                    const type = roll_result[1]
+                    const pokemonName = roll_result[0]
+
+                    if (!pokemonName){
+                        msg.reply(`It looks like something went wrong! Try again.`)
+                        return
+                    }
+
+                    await userInvenSchema.findOneAndUpdate({
+                        _id: id
+                    }, {
+                        $inc: {
+                            myCredits: -2
+                        },
+                        $addToSet: {
+                            invenPoke: pokemonName,
+                        },
+                    }, {
+                        upsert: true,
+                    })
+
+                    rollPage(bot, msg, pokemonName, type)
+
+                } finally {
+                    mongoose.connection.close()
+                }
+            })
+
+            // adds to inventory
 
         } else if (CMD_NAME === "credits") {
 

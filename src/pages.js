@@ -2,19 +2,20 @@ const Discord = require('discord.js')
 const pagination = require('discord.js-pagination')
 const fetch = require('node-fetch');
 
-const eggImage = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/175.png"
+const eggImage = "https://i.imgur.com/"
 const imageURL = "https://pokeapi.co/api/v2/pokemon/" 
 
 const eggType = {
-    'bronze': 'green',
-    'silver': 'green',
-    'gold': 'gold',
-    'diamond': 'purple'
+    'bronze': '2ACXdI0',
+    'silver': '2ACXdI0',
+    'gold': '0w2FUyJ',
+    'diamond': 'g2g3kvS'
 }
 
 module.exports = async (client, message, pokemon, tier) => {
-
+    
     const edited = pokemon.toLowerCase()
+    const hidden = eggImage + eggType[tier] + ".png"
 
     const { species , sprites } = await fetch(imageURL + edited)
         .then(res => res.json())
@@ -23,12 +24,14 @@ module.exports = async (client, message, pokemon, tier) => {
         });
 
     const hiddenEmbed = new Discord.MessageEmbed()
+        .setColor('#0099ff')
         .setTitle('Roll Results:')
         .setDescription(`Congratulations! ${message.author} has rolled a(n) _______.`)
-        .setImage(eggImage)
+        .setImage(hidden)
         .setTimestamp()
 
     const revealEmbed = new Discord.MessageEmbed()
+        .setColor('#0099ff')
         .setTitle('Roll Results:')
         .setDescription(`Congratulations! ${message.author} has rolled a(n) ${pokemon}.`)
         .setImage(sprites.other["official-artwork"].front_default)
