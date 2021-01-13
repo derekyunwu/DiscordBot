@@ -1,10 +1,11 @@
 require('dotenv').config();
 
-const {Client, Message, MessageEmbed} = require('discord.js');
+const {Client, Message, MessageEmbed, MessageAttachment} = require('discord.js');
 const fetch = require('node-fetch');
 const mongo = require('./mongo');
 const userInvenSchema = require('../schemas/inventory-schema')
 const rem = require('./rem')
+const rollPage = require('./pages')
 
 const bot = new Client();
 const PREFIX = "!";
@@ -165,9 +166,23 @@ bot.on('message', async msg => {
                 
             }
         } else if (CMD_NAME === "roll") {
+            
+            const result = rem()
+            const type = result[1]
+            const pokemonName = result[0]
+            // const rollResult = `Congratulations! ${author} has rolled a(n) ||${pokemonName}||.`
 
-            msg.channel.send(rem()[0])
-
+            // const imagePath = 'assets/green.png'
+            // const roll_embed = new MessageEmbed()
+            //     .attachFiles({ attachment: imagePath, name: 'green.png' })
+            //     .setColor('#0099ff')
+            //     .setTitle(`Roll Result:`)
+            //     .setDescription(rollResult)
+            //     .setImage('attachment://'+'green.png')
+            //     .setFooter("Page 1 of 1")
+            
+            // msg.channel.send(roll_embed)
+            rollPage(bot, msg, pokemonName, type)
 
         } else if (CMD_NAME === "credits") {
 
