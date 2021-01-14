@@ -55,6 +55,7 @@ bot.on('message', async msg => {
             "**!inventory** - Prints a list of Pokemon in user inventory\n" + 
             "**!roll** - Uses dupe credits and rolls for a random Pokemon\n" +
             "**!credits** - Displays the number of credits + rolls usable for the REM\n" +
+            "**!claim** - Awards **Pokemon Master** role if user has caught all 151 Pokemon\n" +
             "**!end** - Forfeit **Pokemon Trainer** role / All data is purged\n" 
             );
 
@@ -260,6 +261,31 @@ bot.on('message', async msg => {
                         })
                         
                         msg.channel.send(`${author} has ${result.myCredits} credit(s) or ${Math.trunc(result.myCredits/2)} roll(s).`)
+
+                    } finally {
+                        mongoose.connection.close()
+                    }
+                })
+
+            }
+
+        } else if (CMD_NAME === "claim") {
+
+            if (!member.roles.cache.some(role => role.name === roleName)){
+                msg.channel.send(`${author}, it looks like you haven't started your Pokemon adventure. Type **!start** to begin catching Pokemon.`);
+            } else {
+
+                await mongo().then(async mongoose => {
+                    try {
+                        var result = await userInvenSchema.findOne({
+                            _id: id
+                        })
+                        
+                        if (result.count !== 151){
+                            msg.reply(`It looks like you haven't caught enough pokemon (${result.count} out of 151)!`)
+                        } else {
+                            msg.reply(`Congratulations! You have become a Gen 1 Pokemon Master!`)
+                        }
 
                     } finally {
                         mongoose.connection.close()
