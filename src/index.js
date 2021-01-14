@@ -16,7 +16,7 @@ const roleName = 'Pokemon Trainer';
 bot.login(process.env.DISCORDJS_BOT_TOKEN);
 
 bot.on('ready', () => {
-    console.log('Derkbot is online.');
+    console.log('PokeBot is online.');
 });
 
 bot.on('message', async msg => {
@@ -82,9 +82,9 @@ bot.on('message', async msg => {
 
         } else if (CMD_NAME === "generate"){
 
-            // testing the http requests
             const pokemon_id = Math.floor( (Math.random() * 151) + 1);
             const final_url = url + pokemon_id;
+            // const final_url = url + 1;
 
             const { species , sprites } = await fetch(final_url)
                 .then(res => res.json())
@@ -112,24 +112,40 @@ bot.on('message', async msg => {
                 msg.channel.send("Cannot <!catch> at this time. No wild Pokemon have appeared!");
             } else {
                 if (args[0].toLowerCase() === curr_pokemon.toLowerCase()){
-                    msg.channel.send(`Congratulations ${author}! You have caught a wild ${curr_pokemon}! ${curr_pokemon} has been added to your inventory.`);
+                    
                     var temp = curr_pokemon;
                     curr_pokemon = "";
 
                     await mongo().then(async mongoose => {
                         try {
-                            await userInvenSchema.findOneAndUpdate({
-                                _id: id
-                            }, {
-                                $addToSet: {
-                                    invenPoke: temp,
-                                },
-                            })
+                            var inven = await userInvenSchema.distinct("invenPoke", { _id: id })
+
+                            if (inven.includes(temp)){
+                                await userInvenSchema.findOneAndUpdate({
+                                    _id: id
+                                }, {
+                                    $inc: {
+                                        myCredits: 1
+                                    }
+                                })
+                            } else {
+                                await userInvenSchema.findOneAndUpdate({
+                                    _id: id
+                                }, {
+                                    $inc: {
+                                        count: 1
+                                    },
+                                    $addToSet: {
+                                        invenPoke: temp,
+                                    },
+                                })
+                            }
                         } finally {
                             mongoose.connection.close()
                         }
                     })
 
+                    msg.channel.send(`Congratulations ${author}! You have caught a wild ${temp}! ${temp} has been added to your inventory.`);
                     // finished
                 }
             }
@@ -142,9 +158,10 @@ bot.on('message', async msg => {
                     try {
 
                         var inven = await userInvenSchema.distinct("invenPoke", { _id: id })
-
-                        if (!inven){
+                        
+                        if (inven.length == 0){
                             msg.channel.send(`${author}'s inventory has no Pokemon.`)
+                            return
                         } else {
                             var poke_list = "";
                             for (var i = 0; i < inven.length; i ++){
@@ -187,26 +204,41 @@ bot.on('message', async msg => {
                     const roll_result = rem()
                     const type = roll_result[1]
                     const pokemonName = roll_result[0]
+                    // const type = 'green'
+                    // const pokemonName = 'Bulbasaur'
 
                     if (!pokemonName){
                         msg.reply(`It looks like something went wrong! Try again.`)
                         return
                     }
 
-                    await userInvenSchema.findOneAndUpdate({
-                        _id: id
-                    }, {
-                        $inc: {
-                            myCredits: -2
-                        },
-                        $addToSet: {
-                            invenPoke: pokemonName,
-                        },
-                    }, {
-                        upsert: true,
-                    })
+                    var inven = await userInvenSchema.distinct("invenPoke", { _id: id })
 
-                    rollPage(bot, msg, pokemonName, type)
+                    if (inven.includes(pokemonName)){
+                        await userInvenSchema.findOneAndUpdate({
+                            _id: id
+                        }, {
+                            $inc: {
+                                myCredits: -1
+                            }
+                        })
+                        msg.reply('It appears you have rolled a dupe! 1 credit has been refunded.')
+                    } else {
+                        await userInvenSchema.findOneAndUpdate({
+                            _id: id
+                        }, {
+                            $inc: {
+                                myCredits: -2
+                            },
+                            $addToSet: {
+                                invenPoke: pokemonName,
+                            },
+                        }, {
+                            upsert: true,
+                        })
+    
+                        rollPage(bot, msg, pokemonName, type)
+                    }
 
                 } finally {
                     mongoose.connection.close()
