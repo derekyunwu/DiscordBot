@@ -13,6 +13,8 @@ const url = "https://pokeapi.co/api/v2/pokemon/";
 var curr_pokemon = '';
 const roleName = 'Pokemon Trainer';
 
+let channelIDs = ["799464541645176852", "799464542228578305", "799464543012388886"]
+
 bot.login(process.env.DISCORDJS_BOT_TOKEN);
 
 bot.on('ready', () => {
@@ -34,9 +36,11 @@ bot.on('message', async msg => {
         const member = guild.members.cache.find(member => member.id === id)
 
         if (CMD_NAME === 'intro'){
-
+            if (!channelIDs.includes(msg.channel.id)){
+                return
+            }
             // display intro bot documentation
-            msg.channel.send(`Hi ${author}! I'm DerkBot.\n` + 
+            msg.channel.send(`Hi ${author}! I'm PokeBot.\n` + 
             'I am a PokeCord mini-clone. Through me, users in this server can catch + collect Pokemon. ' +
             'Currently, I only support the following functionality: \n\n' +
             '1) Spawning + Catching Pokemon\n' + 
@@ -45,7 +49,9 @@ bot.on('message', async msg => {
             )
 
         } else if (CMD_NAME === "help"){
-
+            if (!channelIDs.includes(msg.channel.id)){
+                return
+            }
             msg.channel.send("I support the following commands:\n\n" +
             "**!help** - Displays my active commands\n" + 
             "**!intro** - Displays a welcome description for new users\n" + 
@@ -61,6 +67,9 @@ bot.on('message', async msg => {
 
         } else if (CMD_NAME === "start"){
             //begins pokemon adventure
+            if (msg.channel.id !== channelIDs[0]){
+                return
+            }
 
             if (member.roles.cache.some(role => role.name === roleName)){
                 msg.channel.send(`Woops. It looks like ${author} has already begun their adventure!`);
@@ -82,6 +91,9 @@ bot.on('message', async msg => {
             msg.channel.send(`Congratulations ${author}! You have begun your Pokemon adventure. You have claimed the ${roleName} role.`)
 
         } else if (CMD_NAME === "generate"){
+            if (msg.channel.id !== channelIDs[1]){
+                return
+            }
 
             const pokemon_id = Math.floor( (Math.random() * 151) + 1);
             const final_url = url + pokemon_id;
@@ -106,6 +118,9 @@ bot.on('message', async msg => {
             curr_pokemon = species.name.charAt(0).toUpperCase() + species.name.slice(1); // may not be the best way to do this
 
         } else if (CMD_NAME === "catch"){
+            if (msg.channel.id !== channelIDs[1]){
+                return
+            }
 
             if (!member.roles.cache.some(role => role.name === roleName)){
                 msg.channel.send(`${author}, it looks like you haven't started your Pokemon adventure. Type **!start** to begin catching Pokemon.`);
@@ -151,6 +166,9 @@ bot.on('message', async msg => {
                 }
             }
         } else if (CMD_NAME === "inventory"){
+            if (msg.channel.id !== channelIDs[1] && msg.channel.id !== channelIDs[2]){
+                return
+            }
 
             if (!member.roles.cache.some(role => role.name === roleName)){
                 msg.channel.send(`${author}, it looks like you haven't started your Pokemon adventure. Type **!start** to begin catching Pokemon.`);
@@ -184,6 +202,9 @@ bot.on('message', async msg => {
                 
             }
         } else if (CMD_NAME === "roll") {
+            if (msg.channel.id !== channelIDs[2]){
+                return
+            }
 
             if (!member.roles.cache.some(role => role.name === roleName)){
                 msg.channel.send(`${author}, it looks like you haven't started your Pokemon adventure. Type **!start** to begin catching Pokemon.`);
@@ -249,6 +270,9 @@ bot.on('message', async msg => {
             // adds to inventory
 
         } else if (CMD_NAME === "credits") {
+            if (msg.channel.id !== channelIDs[2]){
+                return
+            }
 
             if (!member.roles.cache.some(role => role.name === roleName)){
                 msg.channel.send(`${author}, it looks like you haven't started your Pokemon adventure. Type **!start** to begin catching Pokemon.`);
@@ -270,7 +294,9 @@ bot.on('message', async msg => {
             }
 
         } else if (CMD_NAME === "claim") {
-
+            if (msg.channel.id !== channelIDs[1] && msg.channel.id !== channelIDs[2]){
+                return
+            }
             if (!member.roles.cache.some(role => role.name === roleName)){
                 msg.channel.send(`${author}, it looks like you haven't started your Pokemon adventure. Type **!start** to begin catching Pokemon.`);
             } else {
@@ -296,6 +322,9 @@ bot.on('message', async msg => {
 
         } else if (CMD_NAME === "end"){
             // if does not have pokemon trainer role
+            if (msg.channel.id !== channelIDs[0]){
+                return
+            }
             if (!member.roles.cache.some(role => role.name === roleName)){
                 msg.channel.send(`${author}, it looks like you haven't started your Pokemon adventure. Type **!start** to begin catching Pokemon.`);
             } else {
@@ -318,11 +347,69 @@ bot.on('message', async msg => {
                 msg.channel.send(`${author} your data has been deleted and cannot be recovered.`)
             }
         } 
+        // else if (CMD_NAME === "create") {
+        //     var num = guild.channels.cache.find(c => c.name === 'about').id
+        //     msg.channel.send(`about: ${num}`)
+        //     num = guild.channels.cache.find(c => c.name === 'wild-pokemon').id
+        //     msg.channel.send(`wild-pokemon: ${num}`)
+        //     var num = guild.channels.cache.find(c => c.name === 'rem').id
+        //     msg.channel.send(`rem: ${num}`)
+        // }
     }
 });
 
-bot.on('guildMemberAdd', member => {
-    const channel = member.guild.channels.cache.find(ch => ch.name === "general");
-    if (!channel) return;
-    channel.send(`Welcome to the server, ${member}!`);
-});
+// bot.on('guildMemberAdd', member => {
+//     const channel = member.guild.channels.cache.find(ch => ch.name === "general");
+//     if (!channel) return;
+//     channel.send(`Welcome to the server, ${member}!`);
+// });
+
+bot.on('guildCreate', (guild) => {
+    // bot sets up all its permissions
+    
+    // add Pokemon Trainer + Pokemon Master roles
+
+    // add dedicated channels
+    var categoryID;
+    var aboutID;
+    guild.channels.create('PokeBot', {
+        type: 'category'
+    }).then((cat) => {
+        categoryID = cat.id
+    })
+    guild.channels.create('about', {
+        type: 'text'
+    }).then((chnl) => {
+        chnl.setParent(categoryID)
+        aboutID = chnl.id
+        channelIDs[0] = aboutID
+    })
+    guild.channels.create('wild-pokemon', {
+        type: 'text'
+    }).then((chnl) => {
+        chnl.setParent(categoryID)
+        channelIDs[1] = chnl.id
+    })
+    guild.channels.create('rem', {
+        type: 'text'
+    }).then((chnl) => {
+        chnl.setParent(categoryID)
+        channelIDs[2] =  chnl.id
+    })
+
+    //send hello message to about channel
+    const message = `Hi! I'm PokeBot!\n` + 
+    'I am a PokeCord mini-clone with only some of the basic functions. ' +
+    'As you can see, I can operate only within the PokeBot channel category.\n\n' +
+    '**about**: for information, help, reaction roles (possibly)\n' +
+    '**wild-pokemon**: where wild Pokemon will appear\n' +
+    '**rem**: where users can use dupe credits to roll for Pokemon\n\n' +
+    'To start your Pokemon adventure, claim the **Pokemon Trainer** role by reacting to this message. ' +
+    'Once you have started you will be able to catch Pokemon, view Pokemon in your inventory, view how ' +
+    'many rolls you have, and roll for Pokemon. In order to claim the **Pokemon Master** role, you ' + 
+    'must have all 151 Pokemon in your inventory.\n\n' + 
+    'Unfortunately, at this time, I only support the first 151 Pokemon (Gen 1). More will ' +  
+    'be added as my developer has more time. Happy hunting!!'
+
+    guild.channels.cache.get(aboutID).send(message)
+})
